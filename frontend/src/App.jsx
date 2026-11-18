@@ -66,7 +66,7 @@ useEffect(() => {
   async function loadSettings() {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/settings`,
+        `${import.meta.env.VITE_BACKEND_URL}/settings`,
         { signal: controller.signal },
       )
       const data = await response.json()

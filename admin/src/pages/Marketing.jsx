@@ -15,7 +15,7 @@ const Marketing = ({ token }) => {
 
   const loadSettings = async () => {
     try {
-    const response = await axios.get(`${backendUrl}/api/settings`)
+    const response = await axios.get(`${backendUrl}/settings`)
 
     if (response.data.success) {
       const settings = response.data.settings
@@ -63,7 +63,7 @@ const Marketing = ({ token }) => {
     setSaving(true)
     try {
     const response = await axios.post(
-      `${backendUrl}/api/settings/update`,
+      `${backendUrl}/settings/update`,
       {
         announcementEnabled,
         announcementMessages: messages.filter((m) => m.trim() !== ''),
