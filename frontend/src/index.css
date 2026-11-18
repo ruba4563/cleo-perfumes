@@ -1,0 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f9fafb;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-brand: #d6b536;
+}
+
+.dark {
+  --color-bg: #030303;
+  --color-surface: #0b0b0b;
+  --color-surface-soft: #111111;
+  --color-text: #f5f5f5;
+  --color-text-muted: #b6b6b6;
+  --color-border: #2a2a2a;
+  --color-brand: #d6b536;
+}
+
+* {
+  font-family: "Outfit", sans-serif;
+}
+
+body,
+#root {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.prata-regular {
+  font-family: "Prata", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+a.active hr {
+  display: block;
+}
+
+@media (max-width: 650px) {
+  a.active {
+    background-color: black;
+    color: white;
+  }
+
+  .dark a.active {
+    background-color: var(--color-brand);
+    color: black;
+  }
+}
+
+/* BRANDS MARQUEE */
+
+.brand-marquee {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  width: max-content;
+  animation: brand-marquee 24s linear infinite;
+}
+
+@keyframes brand-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.brand-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* DARK MODE BASE */
+
+.dark body,
+.dark #root {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.dark .text-gray-500,
+.dark .text-gray-600 {
+  color: var(--color-text-muted) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: var(--color-text) !important;
+}
+
+.dark .text-black {
+  color: var(--color-text) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--color-surface-soft) !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--color-border) !important;
+}
+
+.dark hr {
+  border-color: var(--color-border);
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #737373;
+}
+
+.dark option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* لا نغير كل الأزرار حتى ما نخرب أزرار Tailwind */
+.dark button {
+  border-color: inherit;
+}
+
+.dark img.dark-invert,
+.dark .dark\:invert {
+  filter: invert(1);
+}
+
+/* CLERK LOGIN */
+
+.dark .cl-card,
+.dark .cl-card *,
+.dark .cl-rootBox,
+.dark .cl-rootBox * {
+  color: #111827 !important;
+}
+
+.dark .cl-card input,
+.dark .cl-rootBox input {
+  color: #111827 !important;
+  background: #ffffff !important;
+}
+
+.dark .cl-card button,
+.dark .cl-rootBox button {
+  color: #111827 !important;
+}
+
+.dark .cl-userButtonPopoverCard,
+.dark .cl-userButtonPopoverCard *,
+.dark .cl-userButtonPopoverActions,
+.dark .cl-userButtonPopoverActionButton,
+.dark .cl-userButtonPopoverActionButton *,
+.dark .cl-userPreview,
+.dark .cl-userPreview * {
+  color: #111827 !important;
+}
+
+.dark .cl-userButtonPopoverCard {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.dark .cl-userButtonPopoverActionButton {
+  background: #ffffff !important;
+}
+
+.dark .cl-userButtonPopoverActionButton:hover {
+  background: #f3f4f6 !important;
+}
+
+.dark .cl-userButtonPopoverFooter {
+  background: #fff7ed !important;
+}
+
+/* ANNOUNCEMENT BAR */
+
+.announcement-marquee {
+  display: flex;
+  width: max-content;
+  animation: announcement-marquee 38s linear infinite;
+}
+
+@keyframes announcement-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(50%);
+  }
+}
+
+.announcement-marquee:hover {
+  animation-play-state: paused;
+}
