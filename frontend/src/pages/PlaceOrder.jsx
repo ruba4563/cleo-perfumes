@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { formatPrice } from '../utils/formatPrice.js'
 import { getCartSummary } from '../utils/getCartSummary.js'
 import { useAuth } from '@clerk/clerk-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 
 const deliveryFields = [
@@ -22,6 +22,47 @@ const [submitting, setSubmitting] = useState(false)
 const [orderError, setOrderError] = useState('')
 const [orderId, setOrderId] = useState('')
 const requestInFlight = useRef(false)
+const cartKey = JSON.stringify(lines)
+const [quoteVersion, setQuoteVersion] = useState(0)
+const [quote, setQuote] = useState({ cartKey: '', loading: true, pricing: null, error: '' })
+
+useEffect(() => {
+  let controller
+  async function refreshQuote() {
+    controller?.abort()
+    controller = new AbortController()
+    const signal = controller.signal
+    if (!lines.length || orderId) return
+    setQuote({ cartKey, loading: true, pricing: null, error: '' })
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: lines }),
+        signal,
+      })
+      const data = await response.json()
+      if (!response.ok || !data.success) throw new Error(data.message || 'Unable to calculate checkout.')
+      if (!signal.aborted) setQuote({ cartKey, loading: false, pricing: data.pricing, error: '' })
+    } catch (error) {
+      if (!signal.aborted) setQuote({ cartKey, loading: false, pricing: null, error: error.message })
+    }
+  }
+  function onVisible() {
+    if (document.visibilityState === 'visible') refreshQuote()
+  }
+  refreshQuote()
+  window.addEventListener('focus', onVisible)
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    controller?.abort()
+    window.removeEventListener('focus', onVisible)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
+}, [lines, cartKey, quoteVersion, orderId])
+
+const pricing = quote.cartKey === cartKey ? quote.pricing : null
+const pricingReady = Boolean(pricing && !quote.loading)
   if (catalogLoading) return <p role="status" className="py-10">Loading checkout…</p>
   if (catalogError) return <p role="status" className="py-10">{catalogError}</p>
 if (orderId) {
@@ -47,13 +88,13 @@ if (orderId) {
     )
   }
 
-  const { items, subtotal } = getCartSummary(lines, products)
+  const { items } = getCartSummary(lines, products)
 const hasMissingItems = items.length !== lines.length
 
 async function submitOrder(event) {
   event.preventDefault()
 
-  if (!isLoaded || !isSignedIn || hasMissingItems || requestInFlight.current) return
+  if (!isLoaded || !isSignedIn || hasMissingItems || !pricingReady || requestInFlight.current) return
 
   const address = Object.fromEntries(new FormData(event.currentTarget))
 
@@ -71,7 +112,7 @@ async function submitOrder(event) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ address, items: lines }),
+      body: JSON.stringify({ address, items: lines, quoteKey: pricing.quoteKey }),
     })
 
     const result = await response.json()
@@ -83,6 +124,7 @@ async function submitOrder(event) {
     setOrderId(result.orderId)
     clearCart()
   } catch (error) {
+    setQuoteVersion((version) => version + 1)
     setOrderError(
       error instanceof TypeError
         ? 'The connection was interrupted. Check whether the order was saved before trying again.'
@@ -138,17 +180,51 @@ async function submitOrder(event) {
           </p>
         )}
 
+        {!pricingReady && (
+          <div className="py-4" role="status">
+            {quote.error || 'Calculating checkout...'}
+            {quote.error && <button type="button" className="ml-3 underline"
+              onClick={() => setQuoteVersion((version) => version + 1)}>Retry</button>}
+          </div>
+        )}
+
+        {pricingReady && <>
+        <div className="flex justify-between border-t border-gray-200 py-3 text-sm">
+          <span>Delivery fee</span>
+          <span>
+            {pricing.appliedDiscount ? <>
+              <span className="mr-2 text-gray-500 line-through">{formatPrice.format(3)}</span>
+              <span>Free</span>
+            </> : formatPrice.format(pricing.deliveryFee)}
+          </span>
+        </div>
         <div className="flex justify-between border-t border-gray-200 py-4 font-medium">
           <span>Subtotal</span>
-          <span>{formatPrice.format(subtotal)}</span>
+          <span>{formatPrice.format(pricing.subtotal)}</span>
         </div>
+        {pricing.appliedDiscount && <div className="flex justify-between py-2 text-sm">
+          <span>Bundle discount</span>
+          <span>-{formatPrice.format(pricing.discountAmount)}</span>
+        </div>}
+        <div className="flex justify-between border-t border-gray-200 py-4 text-lg font-medium">
+          <span>Total</span><span>{formatPrice.format(pricing.total)}</span>
+        </div>
+        {pricing.appliedDiscount && (
+          <div role="status" className="mt-4 rounded border border-[#D4AF37] bg-[#D4AF37]/10 px-4 py-3">
+            <p className="font-medium">{pricing.appliedDiscount.name}</p>
+            <p className="mt-1 text-sm">
+              {pricing.appliedDiscount.quantity} perfumes for {formatPrice.format(pricing.appliedDiscount.bundlePrice)} — free delivery applied.
+            </p>
+          </div>
+        )}
+        </>}
 
         <h2 className="mt-6 text-xl">PAYMENT METHOD</h2>
         <p className="mt-3 rounded border border-gray-300 px-4 py-3">Cash on Delivery</p>
 
        <button
   type="submit"
-  disabled={!isLoaded || !isSignedIn || submitting || hasMissingItems}
+  disabled={!isLoaded || !isSignedIn || submitting || hasMissingItems || !pricingReady}
   className="mt-6 bg-black px-8 py-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#D4AF37] dark:text-[#000]"
 >
   {submitting ? 'PLACING ORDER…' : 'PLACE ORDER'}

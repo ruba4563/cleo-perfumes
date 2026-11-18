@@ -106,6 +106,7 @@ useEffect(() => {
         }
 
         setProducts(data.products);
+        setCatalogError('');
       } catch (error) {
         if (error.name !== "AbortError") {
           setCatalogError("Unable to load perfumes right now.");
@@ -117,8 +118,22 @@ useEffect(() => {
       }
     }
 
-    loadCatalog();
-    return () => controller.abort();
+   function refreshCatalog() {
+  if (document.visibilityState === 'visible') {
+    loadCatalog()
+  }
+}
+
+loadCatalog()
+
+window.addEventListener('focus', refreshCatalog)
+document.addEventListener('visibilitychange', refreshCatalog)
+
+return () => {
+  controller.abort()
+  window.removeEventListener('focus', refreshCatalog)
+  document.removeEventListener('visibilitychange', refreshCatalog)
+}
   }, []);
 if (loading) return <LoadingScreen />
   return (

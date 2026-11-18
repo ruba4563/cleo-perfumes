@@ -10,6 +10,7 @@ import {
 
 import adminAuth from '../middleware/adminAuth.js'
 import authUser from '../middleware/auth.js'
+import { quoteCheckout } from '../controllers/checkoutController.js'
 
 const orderRouter = express.Router()
 
@@ -18,6 +19,7 @@ orderRouter.post('/status', adminAuth, updateStatus)
 orderRouter.post('/delete', adminAuth, deleteOrder)
 
 orderRouter.post('/place', authUser, placeOrder)
+orderRouter.post('/quote', quoteCheckout)
 orderRouter.post('/claim-gift', authUser, claimGiftOrder)
 orderRouter.post('/userorders', authUser, userOrders)
 

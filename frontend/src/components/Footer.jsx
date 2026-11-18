@@ -88,7 +88,6 @@ const Footer = () => {
             </h3>
 
             <ul className='flex flex-col gap-4 text-gray-400'>
-              <li>+962 7 9000 0000</li>
 
               <li>
                 <a

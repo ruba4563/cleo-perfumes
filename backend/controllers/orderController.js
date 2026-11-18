@@ -1,6 +1,8 @@
 import orderModel from '../models/orderModel.js'
 import userModel from '../models/userModel.js'
 import productModel from '../models/productModel.js'
+import siteSettingsModel from '../models/siteSettingsModel.js'
+import { calculateCheckoutPricing } from '../utils/checkoutPricing.js'
 
 class OrderValidationError extends Error {}
 
@@ -11,7 +13,7 @@ const addressFields = [
 const placeOrder = async (req, res) => {
   try {
     const clerkId = req.auth.userId
-    const { items, address } = req.body ?? {}
+    const { items, address, quoteKey } = req.body ?? {}
 
     const deliveryAddress = Object.fromEntries(
       addressFields.map((field) => [
@@ -48,7 +50,6 @@ const placeOrder = async (req, res) => {
 
     const orderId = await orderModel.db.transaction(async (session) => {
       const confirmedItems = []
-      let subtotalInFils = 0
       let unitsOrdered = 0
 
       for (const { productId, size, quantity } of requestedItems) {
@@ -75,7 +76,6 @@ const placeOrder = async (req, res) => {
           throw new OrderValidationError(`Check the catalog price for ${product.name}.`)
         }
 
-        subtotalInFils += Math.round(unitPrice * 1000) * quantity
         unitsOrdered += quantity
 
         confirmedItems.push({
@@ -85,14 +85,22 @@ const placeOrder = async (req, res) => {
           price: unitPrice,
           size,
           quantity,
+          category: product.category,
         })
+      }
+
+      const settings = await siteSettingsModel.findOne().session(session) || new siteSettingsModel()
+      const pricing = calculateCheckoutPricing(confirmedItems, settings)
+      if (quoteKey !== pricing.quoteKey) {
+        throw new OrderValidationError('Your checkout price changed. Review the refreshed total and place the order again.')
       }
 
       const order = new orderModel({
         userId: clerkId,
         items: confirmedItems,
         address: deliveryAddress,
-        amount: subtotalInFils / 1000,
+        amount: pricing.total,
+        pricing,
         paymentMethod: 'COD',
         payment: false,
         status: 'Order Placed',

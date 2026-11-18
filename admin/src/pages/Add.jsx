@@ -50,12 +50,15 @@ const Add = ({ token }) => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
-
+const form = e.currentTarget
     if (subCategory.length === 0) {
       toast.error('Please select at least one fragrance note')
       return
     }
-
+if (![image1, image2, image3, image4].some(Boolean)) {
+  toast.error('Please upload at least one image')
+  return
+}
     try {
       const formData = new FormData()
 
@@ -82,7 +85,7 @@ const Add = ({ token }) => {
 
       if (response.data.success) {
         toast.success(response.data.message)
-
+form.reset()
         setName('')
         setDescription('')
         setPrice('')
